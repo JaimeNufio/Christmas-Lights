@@ -12,10 +12,10 @@
 #define FRAMES_PER_SECOND 60
 
 
+#define NOTIFICATION  0
 #define TWINKLE       1
-#define NOTIFICATION  2
-#define MERRY         3
-#define LASER         4
+#define MERRY         2
+#define LASER         3
 
 ESP8266WebServer server(80);
 CRGB leds[NUM_LEDS];
@@ -25,11 +25,18 @@ int step = 0;
 int largeStep = 0;
 int currentLed = 0;
 int swapCount = 0;
+int timeElapsed = 0;
+int timeSince = 0;
 
 const char *ssid = "NufioWifi";
 const char *password = "FlapjackAndWaffles";
 
+void handleRandom();
 int roundToNearest(int value, int roundTo);
+
+int defaultModes[3] = {TWINKLE, MERRY, LASER};
+int twinkleRounding = 10;
+
 void handleTwinkle();
 void initTwinkle();
 void updateTwinkle();
@@ -50,7 +57,6 @@ void updateLaser();
 // void handle();
 // void init();
 // void update();
-
 
 void setup () {
   delay(3000); // sanity delay
@@ -84,10 +90,27 @@ void setup () {
 void loop () {
   server.handleClient();  
   
+  timeElapsed += millis()-timeSince;
+  timeSince = millis();
+
+  // Serial.println(timeElapsed);
+  if (timeElapsed > 1000*10 && Mode != NOTIFICATION){
+    timeElapsed = 0;
+    handleRandom();
+  }
+
   if (Mode == TWINKLE){
     updateTwinkle();
   }else if (Mode == NOTIFICATION){
     updateNotification();
+
+    swapCount+=1;
+
+    if (swapCount >= 3){
+      swapCount = 0;
+      handleRandom();
+    }
+
   }else if (Mode == MERRY){
     updateMerry();
   }else if (Mode == LASER){
@@ -102,12 +125,13 @@ void loop () {
 void initNotification () {
   currentLed = 0;
   for (int i = 0; i<NUM_LEDS; i++){
-    ledState[i] = 0;//random(255);
+    ledState[i] = 0;
     leds[i] = CRGB(0,0,0);
   }
 }
 
 void handleNotification () {
+  swapCount = 0;
   Mode = NOTIFICATION;
 
   initNotification();
@@ -117,13 +141,6 @@ void handleNotification () {
 void updateNotification () {
 
   if (currentLed >= NUM_LEDS){
-    swapCount += 1;
-
-    if (swapCount > 3){
-      swapCount = 0;
-      HandleMerry();
-    }
-
     initNotification();
   }
 
@@ -163,12 +180,10 @@ void updateTwinkle () {
   for (int i = 0; i<NUM_LEDS; i++){
     ledState[i] = (ledState[i]+1) % 255;
 
-    int intensity = roundToNearest((255*sin(ledState[i]*2*3.14/255)),50);
+    int intensity = roundToNearest((255*sin(ledState[i]*2*3.14/255)),twinkleRounding);
 
     if (intensity > 255) {intensity = 255;}
     if (intensity <= 25) {intensity = 5;}
-
-    Serial.println(intensity);
 
     leds[i] = CRGB(
       // 0xFC,0xEE,0xA7
@@ -195,7 +210,7 @@ void updateMerry () {
   if (step > largeLoopSize){
     step = 0;
 
-    Serial.println(largeStep);
+    // Serial.println(largeStep);
     largeStep = (largeStep+1)%3;
   }
 
@@ -241,7 +256,7 @@ void initLaser() {
   currentLed = 0;
 }
 
-void updateLaser(){
+void updateLaser() {
   step += 1;
 
   if (step > FRAMES_PER_SECOND/50){
@@ -253,14 +268,35 @@ void updateLaser(){
     currentLed = 0;
   }
 
-  Serial.println(currentLed);
-
   for (int i = 0; i<NUM_LEDS; i++){
     if (near(currentLed, i, 3)){
       leds[i] = CRGB(0,0,255);
     }else{
       leds[i] = CRGB(0,0,0);
     }
+  }
+}
+
+void handleRandom() {
+  int nextMode = random(2)+1; // 1,2,3... notification is 0
+
+  while (nextMode == Mode){ // avoid running same thing twice
+    nextMode = random(2)+1;
+  }
+
+  switch (nextMode){
+    case 1:
+      handleTwinkle();
+      break;
+    case 2:
+      handleMerry();
+      break;
+    case 3:
+      handleLaser();
+      break;
+    default:
+      handleTwinkle();
+      break;
   }
 }
 
@@ -277,7 +313,6 @@ bool near(int leaderLed, int currentLed, int dst){
 }
 
 int roundToNearest(int value, int roundTo) {
-  // Calculate the nearest multiple of roundTo
   int remainder = value % roundTo;
   int halfRoundTo = roundTo / 2;
   int roundedValue = value + (remainder < halfRoundTo ? -remainder : roundTo - remainder);
