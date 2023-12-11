@@ -24,7 +24,6 @@ int Mode = TWINKLE;
 int step = 0;
 int largeStep = 0;
 int currentLed = 0;
-int swapCount = 0;
 int timeElapsed = 0;
 int timeSince = 0;
 
@@ -93,33 +92,28 @@ void loop () {
   timeElapsed += millis()-timeSince;
   timeSince = millis();
 
-  // Serial.println(timeElapsed);
-  if (timeElapsed > 1000*10 && Mode != NOTIFICATION){
-    timeElapsed = 0;
-    handleRandom();
-  }
-
   if (Mode == TWINKLE){
     updateTwinkle();
-  }else if (Mode == NOTIFICATION){
+  } else if (Mode == NOTIFICATION){    
     updateNotification();
 
-    swapCount+=1;
-
-    if (swapCount >= 3){
-      swapCount = 0;
+    if (timeElapsed > 1000*3){
       handleRandom();
     }
 
-  }else if (Mode == MERRY){
+  } else if (Mode == MERRY){
     updateMerry();
-  }else if (Mode == LASER){
+  } else if (Mode == LASER){
     updateLaser();
   }
 
-
   FastLED.show(); // display this frame
   FastLED.delay(1000 / FRAMES_PER_SECOND);
+
+  if (timeElapsed > 1000*3 && Mode != NOTIFICATION){
+    timeElapsed = 0;
+    handleRandom();
+  }
 }
 
 void initNotification () {
@@ -131,8 +125,8 @@ void initNotification () {
 }
 
 void handleNotification () {
-  swapCount = 0;
   Mode = NOTIFICATION;
+  timeElapsed = 0; // reset and reuse timer.
 
   initNotification();
   Serial.println("Notification!");
@@ -278,10 +272,10 @@ void updateLaser() {
 }
 
 void handleRandom() {
-  int nextMode = random(2)+1; // 1,2,3... notification is 0
+  int nextMode = random(3)+1; // 1,2,3... notification is 0
 
   while (nextMode == Mode){ // avoid running same thing twice
-    nextMode = random(2)+1;
+    nextMode = random(3)+1;
   }
 
   switch (nextMode){
