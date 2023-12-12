@@ -101,7 +101,7 @@ void loop () {
   } else if (Mode == NOTIFICATION){    
     updateNotification();
 
-    if (timeElapsed > 1000*SECONDS_PER_MODE){
+    if (timeElapsed > 1000*3){
       handleRandom();
     }
 
@@ -117,7 +117,7 @@ void loop () {
   FastLED.show(); // display this frame
   FastLED.delay(1000 / FRAMES_PER_SECOND);
 
-  if (timeElapsed > 1000*3 && Mode != NOTIFICATION){
+  if (timeElapsed > 1000*SECONDS_PER_MODE && Mode != NOTIFICATION){
     timeElapsed = 0;
     handleRandom();
   }
@@ -172,6 +172,7 @@ void initTwinkle () {
 
 void handleTwinkle () {
   Mode = TWINKLE;
+  timeElapsed = 0;
   initTwinkle();
   Serial.println("Twinkle!");
 }
@@ -196,6 +197,7 @@ void updateTwinkle () {
 
 void handleMerry () {
   Mode = MERRY;
+  timeElapsed = 0;
   initMerry();
   Serial.println("Merry!");
 }
@@ -249,6 +251,7 @@ void updateMerry () {
 
 void handleLaser () {
   Mode = LASER;
+  timeElapsed = 0;
   initLaser();
   randomSolidColor();
   Serial.println("Laser!");
@@ -282,6 +285,7 @@ void updateLaser() {
 
 void handleSolid () {
   Mode = SOLID;
+  timeElapsed = 0;
   initSolid();
 }
 
