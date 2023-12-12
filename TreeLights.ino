@@ -16,6 +16,7 @@
 #define TWINKLE       1
 #define MERRY         2
 #define LASER         3
+#define SOLID         4
 
 ESP8266WebServer server(80);
 CRGB leds[NUM_LEDS];
@@ -35,6 +36,9 @@ int roundToNearest(int value, int roundTo);
 
 int defaultModes[3] = {TWINKLE, MERRY, LASER};
 int twinkleRounding = 10;
+CRGB currentColor = CRGB(255,255,255);
+
+void randomSolidColor();
 
 void handleTwinkle();
 void initTwinkle();
@@ -52,10 +56,9 @@ void handleLaser();
 void initLaser();
 void updateLaser();
 
-
-// void handle();
-// void init();
-// void update();
+void handleSolid();
+void initSolid();
+void updateSolid();
 
 void setup () {
   delay(3000); // sanity delay
@@ -79,6 +82,7 @@ void setup () {
   server.on("/notification", HTTP_GET, handleNotification);
   server.on("/merry", HTTP_GET, handleMerry);
   server.on("/laser", HTTP_GET, handleLaser);
+  server.on("/solid", HTTP_GET, handleSolid);
 
   // Start server
   server.begin();
@@ -105,7 +109,10 @@ void loop () {
     updateMerry();
   } else if (Mode == LASER){
     updateLaser();
+  }else if (Mode == SOLID){
+    updateSolid();
   }
+
 
   FastLED.show(); // display this frame
   FastLED.delay(1000 / FRAMES_PER_SECOND);
@@ -243,6 +250,7 @@ void updateMerry () {
 void handleLaser () {
   Mode = LASER;
   initLaser();
+  randomSolidColor();
   Serial.println("Laser!");
 }
 
@@ -264,18 +272,35 @@ void updateLaser() {
 
   for (int i = 0; i<NUM_LEDS; i++){
     if (near(currentLed, i, 3)){
-      leds[i] = CRGB(0,0,255);
+      leds[i] = currentColor;
     }else{
       leds[i] = CRGB(0,0,0);
     }
   }
 }
 
+
+void handleSolid () {
+  Mode = SOLID;
+  initSolid();
+}
+
+void initSolid() {
+  randomSolidColor();
+}
+
+void updateSolid() {
+  for (int i = 0; i<NUM_LEDS; i++){
+    leds[i] = currentColor;
+  }
+}
+
+
 void handleRandom() {
-  int nextMode = random(3)+1; // 1,2,3... notification is 0
+  int nextMode = random(4)+1; // 1,2,3... notification is 0
 
   while (nextMode == Mode){ // avoid running same thing twice
-    nextMode = random(3)+1;
+    nextMode = random(4)+1;
   }
 
   switch (nextMode){
@@ -288,12 +313,34 @@ void handleRandom() {
     case 3:
       handleLaser();
       break;
+    case 4:
+      handleSolid();
+      break;
     default:
       handleTwinkle();
       break;
   }
 }
 
+void randomSolidColor(){
+  switch (random(5)){
+    case 1: //red
+      currentColor = CRGB(255,0,0);
+      break;
+    case 2: //green
+      currentColor = CRGB(0,255,0);
+      break;
+    case 3: //red
+      currentColor = CRGB(0,0,255);
+      break;
+    case 4: //orange
+      currentColor = CRGB(255,69,0);
+      break;
+    default: //white
+      currentColor = CRGB(255,255,255);
+      break;
+  }
+}
 
 bool near(int leaderLed, int currentLed, int dst){
   int max = (leaderLed+dst)%NUM_LEDS;
