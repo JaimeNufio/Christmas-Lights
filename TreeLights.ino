@@ -10,7 +10,7 @@
 #define NUM_LEDS    100
 #define BRIGHTNESS  255
 #define FRAMES_PER_SECOND 60
-
+#define SECONDS_PER_MODE 60*5
 
 #define NOTIFICATION  0
 #define TWINKLE       1
@@ -101,7 +101,7 @@ void loop () {
   } else if (Mode == NOTIFICATION){    
     updateNotification();
 
-    if (timeElapsed > 1000*3){
+    if (timeElapsed > 1000*SECONDS_PER_MODE){
       handleRandom();
     }
 
